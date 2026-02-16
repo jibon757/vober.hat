@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ভবের হাট - Reward Claim</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 8px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .social-links {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .social-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .social-link.clicked {
+            border-color: #4CAF50;
+            background: #f1f8f4;
+        }
+
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .facebook .social-icon {
+            background: #1877f2;
+            color: white;
+        }
+
+        .youtube .social-icon {
+            background: #FF0000;
+            color: white;
+        }
+
+        .tiktok .social-icon {
+            background: #000000;
+            color: white;
+        }
+
+        .social-text {
+            flex: 1;
+        }
+
+        .social-text strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .social-text small {
+            color: #999;
+        }
+
+        .checkmark {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #4CAF50;
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .social-link.clicked .checkmark {
+            display: flex;
+        }
+
+        .claim-button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: not-allowed;
+            background: #ccc;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .claim-button.active {
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .claim-button.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .claim-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        /* Full Screen Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .overlay-content {
+            text-align: center;
+            padding: 60px 40px;
+            background: white;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 90%;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .overlay-icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: bounceIn 0.6s ease;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .overlay-title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .overlay-message {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .overlay-button {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .overlay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .overlay.success .overlay-icon {
+            color: #4CAF50;
+        }
+
+        .overlay.already-claimed .overlay-icon {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎁 ভবের হাট Reward</h1>
+        <p class="subtitle">নিচের ৩টি লিংকে ক্লিক করুন এবং রিওয়ার্ড দাবি করুন</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="social-links">
+            <a href="https://www.facebook.com/profile.php?id=61585945077727" target="_blank" class="social-link facebook" data-platform="facebook">
+                <div class="social-icon">f</div>
+                <div class="social-text">
+                    <strong>Facebook</strong>
+                    <small>আমাদের পেজ ফলো করুন</small>
+                </div>
+                <div class="checkmark">✓</div>
+            </a>
+
+            <a href="https://www.youtube.com/@voberhat26" target="_blank" class="social-link youtube" data-platform="youtube">
+                <div class="social-icon">▶</div>
+                <div class="social-text">
+                    <strong>YouTube</strong>
+                    <small>চ্যানেল সাবস্ক্রাইব করুন</small>
+                </div>
+                <div class="checkmark">✓</div>
+            </a>
+
+            <a href="https://www.tiktok.com/@vober.hat" target="_blank" class="social-link tiktok" data-platform="tiktok">
+                <div class="social-icon">♪</div>
+                <div class="social-text">
+                    <strong>TikTok</strong>
+                    <small>আমাদের ফলো করুন</small>
+                </div>
+                <div class="checkmark">✓</div>
+            </a>
+        </div>
+
+        <button class="claim-button" id="claimButton" disabled>
+            🔒 ৩টি লিংকে ক্লিক করুন
+        </button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="status-text">দয়া করে অপেক্ষা করুন...</p>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="footer">
+    © 2026 ভবের হাট | All rights reserved <br><br>
+    Developer: 
+    <a href="https://www.facebook.com/ucchasa.mistri" target="_blank">UCC</a> 
+    & 
+    <a href="https://www.facebook.com/jibon.mistry.24400" target="_blank">JBN</a>
+</div>
+
+    </div>
+
+    <!-- Full Screen Overlay -->
+    <div class="overlay" id="overlay">
+        <div class="overlay-content">
+            <div class="overlay-icon" id="overlayIcon">🎉</div>
+            <h2 class="overlay-title" id="overlayTitle">শিরোনাম</h2>
+            <p class="overlay-message" id="overlayMessage">বার্তা</p>
+            <button class="overlay-button" id="overlayButton">ঠিক আছে</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyORK0wojBqdRHnfwm-Y2FbJBkb8rS6ks",
+            authDomain: "vober-hat.firebaseapp.com",
+            projectId: "vober-hat",
+            storageBucket: "vober-hat.firebasestorage.app",
+            messagingSenderId: "194980090323",
+            appId: "1:194980090323:web:5c2bc3ecb7760e6701df26",
+            measurementId: "G-JP4QJZXDRD"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Get or create unique user ID
+        function getUserId() {
+            let userId = localStorage.getItem('userId');
+            if (!userId) {
+                userId = crypto.randomUUID();
+                localStorage.setItem('userId', userId);
+            }
+            return userId;
+        }
+
+        // Track clicked links
+        let clickedLinks = new Set();
+        const totalLinks = 3;
+        const socialLinks = document.querySelectorAll('.social-link');
+        const claimButton = document.getElementById('claimButton');
+        const progressFill = document.getElementById('progressFill');
+        const loading = document.getElementById('loading');
+        const message = document.getElementById('message');
+        const overlay = document.getElementById('overlay');
+        const overlayIcon = document.getElementById('overlayIcon');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayMessage = document.getElementById('overlayMessage');
+        const overlayButton = document.getElementById('overlayButton');
+
+        // Show full-screen overlay
+        function showOverlay(type, icon, title, messageText) {
+            overlayIcon.textContent = icon;
+            overlayTitle.textContent = title;
+            overlayMessage.textContent = messageText;
+            overlay.className = 'overlay show ' + type;
+        }
+
+        // Close overlay
+        overlayButton.addEventListener('click', function() {
+            overlay.classList.remove('show');
+        });
+
+        // Close overlay on background click
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                overlay.classList.remove('show');
+            }
+        });
+
+        // Load clicked state from localStorage
+        function loadClickedState() {
+            const saved = localStorage.getItem('clickedLinks');
+            if (saved) {
+                clickedLinks = new Set(JSON.parse(saved));
+                clickedLinks.forEach(platform => {
+                    const link = document.querySelector(`[data-platform="${platform}"]`);
+                    if (link) {
+                        link.classList.add('clicked');
+                    }
+                });
+                updateProgress();
+            }
+        }
+
+        // Save clicked state to localStorage
+        function saveClickedState() {
+            localStorage.setItem('clickedLinks', JSON.stringify([...clickedLinks]));
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const progress = (clickedLinks.size / totalLinks) * 100;
+            progressFill.style.width = progress + '%';
+
+            if (clickedLinks.size === totalLinks) {
+                claimButton.disabled = false;
+                claimButton.classList.add('active');
+                claimButton.textContent = '🎁 Claim করুন';
+            } else {
+                claimButton.textContent = `🔒 আরও ${totalLinks - clickedLinks.size}টি লিংকে ক্লিক করুন`;
+            }
+        }
+
+        // Handle social link clicks
+        socialLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const platform = this.getAttribute('data-platform');
+                
+                if (!clickedLinks.has(platform)) {
+                    clickedLinks.add(platform);
+                    this.classList.add('clicked');
+                    saveClickedState();
+                    updateProgress();
+                }
+            });
+        });
+
+        // Show message
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = 'message ' + type;
+            message.style.display = 'block';
+        }
+
+        // Hide message
+        function hideMessage() {
+            message.style.display = 'none';
+        }
+
+        // Show loading
+        function showLoading() {
+            loading.style.display = 'block';
+            claimButton.disabled = true;
+        }
+
+        // Hide loading
+        function hideLoading() {
+            loading.style.display = 'none';
+            if (clickedLinks.size === totalLinks) {
+                claimButton.disabled = false;
+            }
+        }
+
+        // Handle claim button click
+        claimButton.addEventListener('click', async function() {
+            // Check if all links are clicked
+            if (clickedLinks.size !== totalLinks) {
+                showMessage('⚠️ দয়া করে ৩টি লিংকে ক্লিক করুন!', 'warning');
+                return;
+            }
+
+            hideMessage();
+            showLoading();
+
+            try {
+                const userId = getUserId();
+                const userDocRef = doc(db, 'mauali', userId);
+
+                // Check if user already claimed
+                const docSnap = await getDoc(userDocRef);
+
+                if (docSnap.exists()) {
+                    hideLoading();
+                    showOverlay(
+                        'already-claimed',
+                        '⚠️',
+                        'আগেই Claim করা হয়েছে!',
+                        'আপনি ইতিমধ্যে এই রিওয়ার্ড claim করেছেন। একই ব্রাউজার থেকে দুইবার claim করা যাবে না।'
+                    );
+                } else {
+                    // Save claim to Firestore
+                    await setDoc(userDocRef, {
+                        userId: userId,
+                        claimedAt: new Date().toISOString(),
+                        timestamp: Date.now(),
+                        platforms: [...clickedLinks]
+                    });
+
+                    hideLoading();
+                    showOverlay(
+                        'success',
+                        '🎉',
+                        'সফলভাবে Claim করা হয়েছে!',
+                        'অভিনন্দন! আপনার রিওয়ার্ড সফলভাবে claim করা হয়েছে। আমাদের সাথে থাকার জন্য ধন্যবাদ!'
+                    );
+                    
+                    // Disable button permanently
+                    claimButton.disabled = true;
+                    claimButton.classList.remove('active');
+                    claimButton.textContent = '✓ Claimed';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                hideLoading();
+                showMessage('❌ একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।', 'error');
+            }
+        });
+
+        // Check claim status on page load
+        async function checkClaimStatus() {
+            try {
+                const userId = getUserId();
+                const userDocRef = doc(db, 'mauali', userId);
+                const docSnap = await getDoc(userDocRef);
+
+                if (docSnap.exists()) {
+                    claimButton.disabled = true;
+                    claimButton.classList.remove('active');
+                    claimButton.textContent = '✓ Already Claimed';
+                    
+                    // Show overlay after a short delay
+                    setTimeout(() => {
+                        showOverlay(
+                            'already-claimed',
+                            '⚠️',
+                            'আগেই Claim করা হয়েছে!',
+                            'আপনি ইতিমধ্যে এই রিওয়ার্ড claim করেছেন।  দুইবার claim করা যাবে না।'
+                        );
+                    }, 500);
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }
+
+        // Initialize
+        loadClickedState();
+        checkClaimStatus();
+    </script>
+</body>
+</html>
