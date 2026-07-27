@@ -1,634 +1,917 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ভবের হাট - Reward Claim</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>ঢাকা বাস সিমুলেটর ৩ডি</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #000; font-family: 'Hind Siliguri', system-ui, sans-serif;
+    color: #f1f1f1; touch-action: none;
+  }
+  #app {
+    display: flex; flex-direction: row;
+    width: 100vw; height: 100vh; background: #1B2430;
+  }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+  /* বাম ও ডান প্যানেল */
+  #leftPad, #rightPad {
+    width: 80px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    justify-content: space-between; align-items: center;
+    padding: 8px 4px; background: #242C3A; z-index: 5; gap: 6px;
+  }
+  .padLabel { font-size: 8px; color: #9AA3B2; text-align: center; line-height: 1.2; }
+  button.ctl {
+    width: 52px; height: 52px; border-radius: 50%; border: none;
+    background: #333B4A; color: #f1f1f1; font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 0 #1a1f28;
+    touch-action: manipulation; cursor: pointer;
+  }
+  button.ctl:active { transform: translateY(2px); box-shadow: 0 1px 0 #1a1f28; }
+  button.ctl.accent { background: #FFC93C; color: #1B2430; }
+  button.ctl.brake { background: #E63946; color: #fff; }
+  button.ctl.full { background: #444; font-size: 18px; }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 500px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
+  /* সেন্টার কলাম */
+  #centerCol { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #1B2430; }
 
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
+  /* হেডার সাইন */
+  #sign {
+    background: #0A0A0A; padding: 3px 8px; display: flex; align-items: center;
+    gap: 6px; border-bottom: 2px solid #FFC93C; flex-shrink: 0; height: 32px;
+  }
+  #routeNum { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 15px; color: #FFB000; background: #111; padding: 0 8px; border-radius: 4px; text-shadow: 0 0 6px rgba(255,176,0,0.7); flex-shrink: 0; }
+  #missionBar { font-family: 'Oswald', sans-serif; font-size: 11px; color: #FFB000; text-shadow: 0 0 5px rgba(255,176,0,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
+  /* স্ট্যাটাস বার */
+  #stats {
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 2px 4px; background: #242C3A; flex-shrink: 0;
+    font-family: 'Oswald', sans-serif; height: 38px; gap: 2px; flex-wrap: nowrap;
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; min-width: 30px; }
+  .stat .v { font-size: 12px; font-weight: 600; line-height: 1.1; }
+  .stat .l { font-size: 7px; color: #9AA3B2; line-height: 1; }
+  #gearDots { display: flex; gap: 2px; }
+  .gdot { width: 7px; height: 7px; border-radius: 50%; background: #3a3f4a; }
+  .gdot.on { background: #FFC93C; }
+  #lives { display: flex; gap: 2px; }
+  .life { width: 9px; height: 6px; background: #FFC93C; border-radius: 2px; }
+  .life.lost { background: #3a3f4a; }
 
-        .progress-bar {
-            background: #e0e0e0;
-            height: 8px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            overflow: hidden;
-        }
+  /* স্টেজ */
+  #stage { position: relative; flex: 1; min-height: 0; background: #1B2430; }
+  #stage canvas { display: block; width: 100% !important; height: 100% !important; }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
+  /* ওভারলে */
+  .overlay {
+    position: absolute; inset: 0; z-index: 10;
+    background: rgba(10, 12, 16, 0.94);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 16px; gap: 10px; overflow-y: auto;
+  }
+  .overlay.hidden { display: none !important; }
+  .title-main { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; color: #FFC93C; }
+  .subtitle { color: #9AA3B2; font-size: 11px; max-width: 360px; line-height: 1.5; }
+  .big-btn {
+    font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600;
+    padding: 9px 24px; border: none; border-radius: 8px;
+    background: #FFC93C; color: #1B2430; box-shadow: 0 4px 0 #b8860b;
+    touch-action: manipulation; cursor: pointer;
+  }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b8860b; }
+  .ghost-btn {
+    font-family: 'Hind Siliguri', sans-serif; font-size: 11px;
+    color: #2EC4B6; background: none; border: 1px solid #2EC4B6;
+    border-radius: 6px; padding: 5px 12px;
+    touch-action: manipulation; cursor: pointer;
+  }
+  .btnRow { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .result-row { display: flex; gap: 16px; margin: 4px 0; }
+  .result-row .stat .v { font-size: 18px; color: #FFC93C; }
 
-        .social-links {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
+  /* গ্যারেজ */
+  .shopMoney { font-family: 'Oswald', sans-serif; font-size: 18px; color: #FFC93C; margin-bottom: 2px; }
+  .upgradeCard {
+    width: 100%; max-width: 360px; background: #242C3A; border-radius: 10px;
+    padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .upgradeInfo { text-align: left; }
+  .upgradeInfo .name { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 600; }
+  .upgradeInfo .lvl { font-size: 10px; color: #9AA3B2; }
+  .upgradeDots { display: flex; gap: 3px; margin-top: 2px; }
+  .udot { width: 12px; height: 4px; border-radius: 2px; background: #3a3f4a; }
+  .udot.on { background: #2EC4B6; }
+  .buyBtn {
+    font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600;
+    padding: 5px 10px; border: none; border-radius: 6px;
+    background: #FFC93C; color: #1B2430; white-space: nowrap;
+    touch-action: manipulation; cursor: pointer;
+  }
+  .buyBtn:disabled { background: #3a3f4a; color: #9AA3B2; }
 
-        .social-link {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            text-decoration: none;
-            color: #333;
-            transition: all 0.3s ease;
-            position: relative;
-            cursor: pointer;
-        }
+  /* টোস্ট */
+  #toast {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    z-index: 8; font-family: 'Oswald', sans-serif; font-size: 12px;
+    background: rgba(0,0,0,0.7); color: #FFC93C;
+    padding: 4px 12px; border-radius: 20px; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
 
-        .social-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .social-link.clicked {
-            border-color: #4CAF50;
-            background: #f1f8f4;
-        }
-
-        .social-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            margin-right: 15px;
-        }
-
-        .facebook .social-icon {
-            background: #1877f2;
-            color: white;
-        }
-
-        .youtube .social-icon {
-            background: #FF0000;
-            color: white;
-        }
-
-        .tiktok .social-icon {
-            background: #000000;
-            color: white;
-        }
-
-        .social-text {
-            flex: 1;
-        }
-
-        .social-text strong {
-            display: block;
-            margin-bottom: 3px;
-        }
-
-        .social-text small {
-            color: #999;
-        }
-
-        .checkmark {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #4CAF50;
-            color: white;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-
-        .social-link.clicked .checkmark {
-            display: flex;
-        }
-
-        .claim-button {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: not-allowed;
-            background: #ccc;
-            color: #666;
-            transition: all 0.3s ease;
-        }
-
-        .claim-button.active {
-            cursor: pointer;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .claim-button.active:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .claim-button:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .message {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: 500;
-            display: none;
-        }
-
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .message.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .status-text {
-            margin-top: 10px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #999;
-            font-size: 12px;
-        }
-
-        /* Full Screen Overlay */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .overlay.show {
-            display: flex;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .overlay-content {
-            text-align: center;
-            padding: 60px 40px;
-            background: white;
-            border-radius: 30px;
-            max-width: 600px;
-            width: 90%;
-            animation: slideUp 0.5s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .overlay-icon {
-            font-size: 100px;
-            margin-bottom: 20px;
-            animation: bounceIn 0.6s ease;
-        }
-
-        @keyframes bounceIn {
-            0% {
-                transform: scale(0);
-            }
-            50% {
-                transform: scale(1.2);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .overlay-title {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .overlay-message {
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .overlay-button {
-            padding: 15px 40px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        .overlay-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .overlay.success .overlay-icon {
-            color: #4CAF50;
-        }
-
-        .overlay.already-claimed .overlay-icon {
-            color: #ff9800;
-        }
-    </style>
+  /* রেসপন্সিভ */
+  @media (max-width: 600px) {
+    #leftPad, #rightPad { width: 60px; padding: 6px 2px; }
+    button.ctl { width: 44px; height: 44px; font-size: 16px; }
+    .padLabel { font-size: 7px; }
+    .title-main { font-size: 18px; }
+    .big-btn { font-size: 12px; padding: 7px 16px; }
+    .stat .v { font-size: 11px; }
+    .stat .l { font-size: 6px; }
+  }
+  @media (orientation: portrait) {
+    #leftPad, #rightPad { width: 55px; }
+    button.ctl { width: 40px; height: 40px; font-size: 14px; }
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    #leftPad, #rightPad { width: 65px; }
+    button.ctl { width: 46px; height: 46px; font-size: 18px; }
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="three.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>🎁 ভবের হাট Reward</h1>
-        <p class="subtitle">নিচের ৩টি লিংকে ক্লিক করুন এবং রিওয়ার্ড দাবি করুন</p>
 
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
+<div id="app">
+
+  <div id="leftPad">
+    <div class="padLabel">লেন / ব্রেক</div>
+    <button class="ctl" id="laneLeftBtn">◀</button>
+    <button class="ctl brake" id="brakeBtn">🛑</button>
+  </div>
+
+  <div id="centerCol">
+    <div id="sign">
+      <div id="routeNum">৭০৪</div>
+      <div id="missionBar">যাত্রী তুলুন ও ভাড়া আয় করুন</div>
+    </div>
+    <div id="stats">
+      <div class="stat"><div class="v" id="fareVal">৳ ০</div><div class="l">টাকা</div></div>
+      <div class="stat"><div class="v" id="paxVal">০</div><div class="l">যাত্রী</div></div>
+      <div class="stat"><div class="v" id="distVal">০.০</div><div class="l">কিমি</div></div>
+      <div class="stat"><div id="gearDots"></div><div class="l">গিয়ার</div></div>
+      <div class="stat"><div id="lives"></div><div class="l">লাইফ</div></div>
+    </div>
+    <div id="stage">
+      <canvas id="game"></canvas>
+      <div id="toast"></div>
+
+      <div class="overlay" id="startScreen">
+        <div class="title-main">ঢাকা বাস সিমুলেটর ৩ডি</div>
+        <div class="subtitle">বাম পাশে লেন-বামে ও ব্রেক (চেপে ধরুন)। ডান পাশে লেন-ডানে ও গ্যাস (ট্যাপ করুন, প্রতি ট্যাপে এক গিয়ার বাড়বে, মোট ৫ গিয়ার)। বাস স্টপ ও রাস্তার পাশে যাত্রী তুলুন। মাঝে মাঝে ইমার্জেন্সি যাত্রী আসবে — সময়মতো হাসপাতালে পৌঁছান বোনাসের জন্য!</div>
+        <div class="btnRow">
+          <button class="big-btn" id="startBtn">চালানো শুরু করুন</button>
+          <button class="ghost-btn" id="shopBtnStart">🛠️ গ্যারেজ</button>
         </div>
+        <button class="ghost-btn" id="installBtn">📲 অ্যাপ হিসেবে ইনস্টল করুন</button>
+      </div>
 
-        <div class="social-links">
-            <a href="https://www.facebook.com/profile.php?id=61585945077727" target="_blank" class="social-link facebook" data-platform="facebook">
-                <div class="social-icon">f</div>
-                <div class="social-text">
-                    <strong>Facebook</strong>
-                    <small>আমাদের পেজ ফলো করুন</small>
-                </div>
-                <div class="checkmark">✓</div>
-            </a>
-
-            <a href="https://www.youtube.com/@voberhat26" target="_blank" class="social-link youtube" data-platform="youtube">
-                <div class="social-icon">▶</div>
-                <div class="social-text">
-                    <strong>YouTube</strong>
-                    <small>চ্যানেল সাবস্ক্রাইব করুন</small>
-                </div>
-                <div class="checkmark">✓</div>
-            </a>
-
-            <a href="https://www.tiktok.com/@vober.hat" target="_blank" class="social-link tiktok" data-platform="tiktok">
-                <div class="social-icon">♪</div>
-                <div class="social-text">
-                    <strong>TikTok</strong>
-                    <small>আমাদের ফলো করুন</small>
-                </div>
-                <div class="checkmark">✓</div>
-            </a>
+      <div class="overlay hidden" id="overScreen">
+        <div class="title-main" style="color:#E63946;">যাত্রা শেষ</div>
+        <div class="result-row">
+          <div class="stat"><div class="v" id="finalFare">৳ ০</div><div class="l">মোট টাকা</div></div>
+          <div class="stat"><div class="v" id="finalPax">০</div><div class="l">যাত্রী</div></div>
+          <div class="stat"><div class="v" id="finalDist">০.০</div><div class="l">কিমি</div></div>
         </div>
-
-        <button class="claim-button" id="claimButton" disabled>
-            🔒 ৩টি লিংকে ক্লিক করুন
-        </button>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p class="status-text">দয়া করে অপেক্ষা করুন...</p>
+        <div class="btnRow">
+          <button class="big-btn" id="retryBtn">আবার চালান</button>
+          <button class="ghost-btn" id="shopBtnOver">🛠️ গ্যারেজ</button>
         </div>
+      </div>
 
-        <div class="message" id="message"></div>
+      <div class="overlay hidden" id="shopScreen">
+        <div class="title-main">🛠️ গ্যারেজ</div>
+        <div class="shopMoney" id="shopMoney">৳ ০</div>
+        <div id="upgradeList" style="display:flex;flex-direction:column;gap:8px;width:100%;align-items:center;"></div>
+        <button class="big-btn" id="closeShopBtn">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
 
-        <div class="footer">
-    © 2026 ভবের হাট | All rights reserved <br><br>
-    Developer: 
-    <a href="https://www.facebook.com/ucchasa.mistri" target="_blank">UCC</a> 
-    & 
-    <a href="https://www.facebook.com/jibon.mistry.24400" target="_blank">JBN</a>
+  <div id="rightPad">
+    <div class="padLabel">লেন / গ্যাস</div>
+    <button class="ctl" id="laneRightBtn">▶</button>
+    <button class="ctl accent" id="gasBtn">🚀</button>
+    <button class="ctl full" id="fullscreenBtn">⛶</button>
+  </div>
+
 </div>
 
-    </div>
+<script>
+(function(){
+  'use strict';
 
-    <!-- Full Screen Overlay -->
-    <div class="overlay" id="overlay">
-        <div class="overlay-content">
-            <div class="overlay-icon" id="overlayIcon">🎉</div>
-            <h2 class="overlay-title" id="overlayTitle">শিরোনাম</h2>
-            <p class="overlay-message" id="overlayMessage">বার্তা</p>
-            <button class="overlay-button" id="overlayButton">ঠিক আছে</button>
-        </div>
-    </div>
+  if (typeof THREE === 'undefined') {
+    document.getElementById('app').innerHTML = `
+      <div style="margin:auto;padding:24px;text-align:center;color:#f1f1f1;">
+        <div style="font-size:20px;margin-bottom:10px;">⚠️ গেম লোড হয়নি</div>
+        <div style="font-size:14px;color:#9AA3B2;">Three.js লাইব্রেরি পাওয়া যায়নি।</div>
+      </div>
+    `;
+    return;
+  }
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  // ===== ফুলস্ক্রিন ও অরিয়েন্টেশন লক =====
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
 
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCyORK0wojBqdRHnfwm-Y2FbJBkb8rS6ks",
-            authDomain: "vober-hat.firebaseapp.com",
-            projectId: "vober-hat",
-            storageBucket: "vober-hat.firebasestorage.app",
-            messagingSenderId: "194980090323",
-            appId: "1:194980090323:web:5c2bc3ecb7760e6701df26",
-            measurementId: "G-JP4QJZXDRD"
-        };
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.warn('Fullscreen request denied:', err);
+      });
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
 
-        // Get or create unique user ID
-        function getUserId() {
-            let userId = localStorage.getItem('userId');
-            if (!userId) {
-                userId = crypto.randomUUID();
-                localStorage.setItem('userId', userId);
-            }
-            return userId;
+  document.addEventListener('fullscreenchange', () => {
+    fullscreenBtn.textContent = document.fullscreenElement ? '⛶' : '⛶';
+    setTimeout(resize, 100);
+  });
+
+  window.addEventListener('load', () => {
+    setTimeout(() => window.scrollTo(0, 0), 200);
+  });
+
+  // ===== PWA =====
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  }
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('installBtn');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferredPrompt = e; installBtn.classList.add('show');
+  });
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.classList.remove('show');
+  });
+  window.addEventListener('appinstalled', () => installBtn.classList.remove('show'));
+
+  // ===== গেম স্টেট =====
+  let money = 200;
+  const UPG = {
+    engine: { name: '⚙️ ইঞ্জিন/স্পিড', level: 1, max: 4, cost: [0, 150, 350, 700] },
+    seats:  { name: '💺 সিট সংখ্যা', level: 1, max: 4, cost: [0, 120, 300, 600] },
+    brake:  { name: '🛞 ব্রেক/হ্যান্ডলিং', level: 1, max: 4, cost: [0, 130, 320, 650] }
+  };
+  function upgradeCost(key) {
+    const u = UPG[key];
+    return u.level >= u.max ? null : u.cost[u.level];
+  }
+
+  const BASE_GEARS = [4, 8, 12.5, 17.5, 23];
+  function currentGears() {
+    const mult = 1 + (UPG.engine.level - 1) * 0.16;
+    return BASE_GEARS.map(g => g * mult);
+  }
+  function currentBrakeRate() { return 9 + (UPG.brake.level - 1) * 4; }
+  function currentLaneLerp() { return 4 + (UPG.brake.level - 1) * 2; } // স্মুথের জন্য কম
+  function currentSeatCapacityBonus() { return UPG.seats.level - 1; }
+
+  // ===== THREE.JS সেটআপ =====
+  const canvas = document.getElementById('game');
+  const stage = document.getElementById('stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.shadowMap.enabled = true;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x8ec9e8);
+  scene.fog = new THREE.Fog(0x8ec9e8, 40, 170);
+
+  const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 400);
+
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.9);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+  sun.position.set(-20, 30, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -30;
+  sun.shadow.camera.right = 30;
+  sun.shadow.camera.top = 30;
+  sun.shadow.camera.bottom = -30;
+  sun.shadow.camera.far = 80;
+  scene.add(sun);
+
+  // ---- রাস্তা ----
+  const LANES = 4, LANE_W = 2.6;
+  const ROAD_W = LANE_W * LANES;
+  const laneX = [];
+  for (let i = 0; i < LANES; i++) laneX.push(-ROAD_W/2 + LANE_W*i + LANE_W/2);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0x4a7a45 }));
+  ground.rotation.x = -Math.PI/2; ground.position.y = -0.01; ground.receiveShadow = true;
+  scene.add(ground);
+
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W + 1, 400), new THREE.MeshLambertMaterial({ color: 0x33383f }));
+  road.rotation.x = -Math.PI/2; road.receiveShadow = true;
+  scene.add(road);
+
+  const sidewalkGeo = new THREE.BoxGeometry(1.4, 0.15, 400);
+  const sidewalkMat = new THREE.MeshLambertMaterial({ color: 0x8a8f98 });
+  const sideL = new THREE.Mesh(sidewalkGeo, sidewalkMat);
+  sideL.position.set(-ROAD_W/2 - 0.7 - 0.2, 0.06, 0);
+  sideL.receiveShadow = true; sideL.castShadow = true;
+  const sideR = sideL.clone(); sideR.position.x = ROAD_W/2 + 0.7 + 0.2;
+  scene.add(sideL, sideR);
+
+  const DASH_LEN = 250;
+  const dashes = [];
+  for (let i = 1; i < LANES; i++) {
+    const x = -ROAD_W/2 + LANE_W * i;
+    for (let z = -DASH_LEN; z < 20; z += 6) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 2.4), new THREE.MeshBasicMaterial({ color: 0xf1f1f1 }));
+      m.position.set(x, 0.02, z);
+      scene.add(m); dashes.push(m);
+    }
+  }
+  function scrollDashes(dz) {
+    dashes.forEach(m => { m.position.z += dz; if (m.position.z > 20) m.position.z -= (DASH_LEN + 20); });
+  }
+
+  const buildings = [];
+  const BCOLORS = [0xd88a5c, 0xc9c1a8, 0x9fb4c9, 0xb98b9e, 0xe0c674, 0xa3a8b0];
+  function makeBuilding() {
+    const h = 4 + Math.random() * 10, w = 3 + Math.random() * 2.5, d = 3 + Math.random() * 2.5;
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: BCOLORS[Math.floor(Math.random() * BCOLORS.length)] }));
+    body.position.y = h/2; body.castShadow = true; body.receiveShadow = true;
+    g.add(body);
+    const winMat = new THREE.MeshLambertMaterial({ color: 0x1B2430 });
+    for (let f = 1; f < h; f += 1.6) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.82, 0.6, d + 0.02), winMat);
+      win.position.set(0, f, 0);
+      g.add(win);
+    }
+    return g;
+  }
+  const BUILD_SIDE_X_L = -ROAD_W/2 - 4.2;
+  const BUILD_SIDE_X_R = ROAD_W/2 + 4.2;
+  for (let z = -DASH_LEN; z < 20; z += 10) {
+    [BUILD_SIDE_X_L, BUILD_SIDE_X_R].forEach(side => {
+      if (Math.random() < 0.75) {
+        const b = makeBuilding();
+        b.position.set(side + (Math.random() - 0.5) * 1.5, 0, z + (Math.random() - 0.5) * 4);
+        scene.add(b); buildings.push(b);
+      }
+    });
+  }
+  function scrollBuildings(dz) {
+    buildings.forEach(b => { b.position.z += dz; if (b.position.z > 20) b.position.z -= (DASH_LEN + 20); });
+  }
+
+  // ---- বাস ----
+  function makeWheel() {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.28, 14), new THREE.MeshLambertMaterial({ color: 0x111111 }));
+    w.rotation.z = Math.PI/2; w.castShadow = true;
+    return w;
+  }
+  function makeBus() {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.7, 4.4), new THREE.MeshLambertMaterial({ color: 0xFFC93C }));
+    body.position.y = 1.05; body.castShadow = true; body.receiveShadow = true;
+    g.add(body);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.94, 0.28, 4.42), new THREE.MeshLambertMaterial({ color: 0x2EC4B6 }));
+    stripe.position.y = 1.55;
+    g.add(stripe);
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 0.1), new THREE.MeshLambertMaterial({ color: 0x1B2430 }));
+    windshield.position.set(0, 1.55, 2.2);
+    g.add(windshield);
+    for (const side of [-1, 1]) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 3.4), new THREE.MeshLambertMaterial({ color: 0x1B2430 }));
+      win.position.set(side * 0.97, 1.55, -0.1);
+      g.add(win);
+    }
+    const wheelPositions = [[-0.95, 0.34, 1.5], [0.95, 0.34, 1.5], [-0.95, 0.34, -1.5], [0.95, 0.34, -1.5]];
+    wheelPositions.forEach(p => { const w = makeWheel(); w.position.set(p[0], p[1], p[2]); g.add(w); });
+    return g;
+  }
+  const bus = makeBus();
+  scene.add(bus);
+  let busLane = 1;
+  let busX = laneX[busLane];
+  bus.position.set(busX, 0, 0);
+
+  // ---- গাড়ি ----
+  const CAR_COLORS = [0xE63946, 0x2EC4B6, 0x457B9D, 0xBFC0C0, 0xF4A261];
+  function makeCar() {
+    const g = new THREE.Group();
+    const c = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.65, 2.8), new THREE.MeshLambertMaterial({ color: c }));
+    body.position.y = 0.55; body.castShadow = true;
+    g.add(body);
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.5, 1.3), new THREE.MeshLambertMaterial({ color: 0x1B2430 }));
+    cab.position.set(0, 0.98, 0.1);
+    g.add(cab);
+    [[-0.7, 0.28, 0.9], [0.7, 0.28, 0.9], [-0.7, 0.28, -0.9], [0.7, 0.28, -0.9]].forEach(p => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.22, 12), new THREE.MeshLambertMaterial({ color: 0x111111 }));
+      w.rotation.z = Math.PI/2; w.position.set(p[0], p[1], p[2]);
+      g.add(w);
+    });
+    return g;
+  }
+
+  // ---- মানুষ ----
+  function makePerson(emergency) {
+    const g = new THREE.Group();
+    const col = emergency ? 0xE63946 : [0x2EC4B6, 0xF4A261, 0x9d4edd, 0x457B9D][Math.floor(Math.random() * 4)];
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.75, 10), new THREE.MeshLambertMaterial({ color: col }));
+    body.position.y = 0.55; body.castShadow = true;
+    g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 10), new THREE.MeshLambertMaterial({ color: 0xE8B98C }));
+    head.position.y = 1.05;
+    g.add(head);
+    if (emergency) {
+      const flag = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.02), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      const cross1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, 0.03), new THREE.MeshBasicMaterial({ color: 0xE63946 }));
+      const cross2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.03), new THREE.MeshBasicMaterial({ color: 0xE63946 }));
+      flag.position.set(0.3, 1.3, 0); cross1.position.set(0.3, 1.3, 0.02); cross2.position.set(0.3, 1.3, 0.02);
+      g.add(flag, cross1, cross2);
+    }
+    return g;
+  }
+
+  function makeStopSign() {
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.8, 8), new THREE.MeshLambertMaterial({ color: 0x555555 }));
+    pole.position.y = 0.9;
+    g.add(pole);
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.05), new THREE.MeshLambertMaterial({ color: 0xFFC93C }));
+    sign.position.y = 1.75;
+    g.add(sign);
+    return g;
+  }
+
+  function makeHospital() {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(7, 7, 6), new THREE.MeshLambertMaterial({ color: 0xf4f4f4 }));
+    body.position.y = 3.5; body.castShadow = true; body.receiveShadow = true;
+    g.add(body);
+    const cross1 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.6, 0.1), new THREE.MeshBasicMaterial({ color: 0xE63946 }));
+    const cross2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.2, 0.1), new THREE.MeshBasicMaterial({ color: 0xE63946 }));
+    cross1.position.set(0, 5.2, 3.05); cross2.position.set(0, 5.2, 3.05);
+    g.add(cross1, cross2);
+    for (let i = 0; i < 3; i++) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.5, 0.1), new THREE.MeshLambertMaterial({ color: 0x9fd4e8 }));
+      win.position.set(0, 1.5 + i * 1.7, 3.05);
+      g.add(win);
+    }
+    return g;
+  }
+
+  // ===== গেম স্টেট =====
+  let state = 'start';
+  let gear = 0, speed = 0, targetSpeed = 0, braking = false;
+  let fare = 0, pax = 0, distKm = 0, lives = 3;
+  let obstacles = [], stops = [], pedestrians = [];
+  let mission = null;
+  let invincible = 0;
+  let spawnTimer = 0, stopTimer = 0, pedTimer = 0, missionCooldown = 8;
+  let lastTime = 0, rafId = null;
+  let distanceAccum = 0;
+
+  function toBn(num) {
+    const m = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+    return String(num).split('').map(c => m[c] !== undefined ? m[c] : c).join('');
+  }
+
+  function updateHUD() {
+    document.getElementById('fareVal').textContent = '৳ ' + toBn(fare);
+    document.getElementById('paxVal').textContent = toBn(pax);
+    document.getElementById('distVal').textContent = toBn(distKm.toFixed(1));
+    const gd = document.getElementById('gearDots');
+    gd.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const d = document.createElement('div');
+      d.className = 'gdot' + (i <= gear ? ' on' : '');
+      gd.appendChild(d);
+    }
+    const lv = document.getElementById('lives');
+    lv.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const d = document.createElement('div');
+      d.className = 'life' + (i < lives ? '' : ' lost');
+      lv.appendChild(d);
+    }
+    if (mission) {
+      document.getElementById('missionBar').textContent = '🏥 ইমার্জেন্সি! হাসপাতালে পৌঁছান — ' + Math.ceil(mission.timeLeft) + 's';
+    } else {
+      document.getElementById('missionBar').textContent = 'যাত্রী তুলুন ও ভাড়া আয় করুন';
+    }
+  }
+
+  let toastTimer = null;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+
+  function clearGroup(list) {
+    list.forEach(o => scene.remove(o.mesh));
+    list.length = 0;
+  }
+
+  function resetGame() {
+    clearGroup(obstacles); clearGroup(stops); clearGroup(pedestrians);
+    if (mission && mission.hospitalObj) scene.remove(mission.hospitalObj);
+    mission = null;
+    gear = 0; speed = 0; targetSpeed = 0; braking = false;
+    fare = 0; pax = 0; distKm = 0; lives = 3;
+    invincible = 0; distanceAccum = 0;
+    spawnTimer = 1.4; stopTimer = 2.6; pedTimer = 1.8; missionCooldown = 10;
+    busLane = 1; busX = laneX[busLane]; bus.position.set(busX, 0, 0);
+    updateHUD();
+  }
+
+  function endGame() {
+    state = 'over';
+    document.getElementById('finalFare').textContent = '৳ ' + toBn(fare);
+    document.getElementById('finalPax').textContent = toBn(pax);
+    document.getElementById('finalDist').textContent = toBn(distKm.toFixed(1));
+    document.getElementById('overScreen').classList.remove('hidden');
+  }
+
+  // ===== স্পন =====
+  function spawnObstacle() {
+    const lane = Math.floor(Math.random() * LANES);
+    const mesh = makeCar();
+    mesh.position.set(laneX[lane], 0, -90);
+    scene.add(mesh);
+    obstacles.push({ mesh, lane, hit: false });
+  }
+
+  function spawnStop() {
+    const lane = Math.floor(Math.random() * LANES);
+    const emergency = !mission && missionCooldown <= 0 && Math.random() < 0.35;
+    const group = new THREE.Group();
+    group.add(makeStopSign());
+    const person = makePerson(emergency);
+    person.position.x = 0.35;
+    group.add(person);
+    group.position.set(laneX[lane], 0, -100);
+    scene.add(group);
+    stops.push({ mesh: group, lane, hit: false, emergency });
+    if (emergency) missionCooldown = 999;
+  }
+
+  function spawnPedestrian() {
+    const side = Math.random() < 0.5 ? 0 : LANES - 1;
+    const g = makePerson(false);
+    const xOff = side === 0 ? -0.9 : 0.9;
+    g.position.set(laneX[side] + xOff, 0, -95);
+    scene.add(g);
+    pedestrians.push({ mesh: g, lane: side, hit: false });
+  }
+
+  function startMission(fromLane) {
+    const hosp = makeHospital();
+    hosp.position.set(laneX[Math.floor(Math.random() * LANES)] * 0.4, 0, -140);
+    scene.add(hosp);
+    mission = { timeLeft: 26, hospitalObj: hosp, hospLane: Math.round(hosp.position.x / LANE_W) + 1 };
+    toast('🚨 ইমার্জেন্সি যাত্রী উঠেছে! হাসপাতালে পৌঁছান');
+  }
+
+  // ===== কন্ট্রোল =====
+  function gasTap() {
+    if (state !== 'playing') return;
+    if (gear < 5) gear++;
+    targetSpeed = currentGears()[gear - 1];
+  }
+  function brakeStart() { if (state === 'playing') braking = true; }
+  function brakeEnd() { braking = false; }
+  function laneMove(dir) {
+    if (state !== 'playing') return;
+    busLane = Math.max(0, Math.min(LANES - 1, busLane + dir));
+  }
+
+  document.getElementById('gasBtn').addEventListener('click', gasTap);
+  document.getElementById('laneLeftBtn').addEventListener('click', () => laneMove(-1));
+  document.getElementById('laneRightBtn').addEventListener('click', () => laneMove(1));
+
+  const brakeBtn = document.getElementById('brakeBtn');
+  brakeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); brakeStart(); }, { passive: false });
+  brakeBtn.addEventListener('touchend', (e) => { e.preventDefault(); brakeEnd(); }, { passive: false });
+  brakeBtn.addEventListener('mousedown', brakeStart);
+  brakeBtn.addEventListener('mouseup', brakeEnd);
+  brakeBtn.addEventListener('mouseleave', brakeEnd);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') laneMove(-1);
+    else if (e.key === 'ArrowRight') laneMove(1);
+    else if (e.key === ' ' || e.key === 'ArrowUp') gasTap();
+    else if (e.key === 'ArrowDown') brakeStart();
+  });
+  window.addEventListener('keyup', (e) => { if (e.key === 'ArrowDown') brakeEnd(); });
+
+  // ===== গ্যারেজ UI =====
+  function renderShop() {
+    document.getElementById('shopMoney').textContent = '৳ ' + toBn(money);
+    const list = document.getElementById('upgradeList');
+    list.innerHTML = '';
+    Object.keys(UPG).forEach(key => {
+      const u = UPG[key];
+      const card = document.createElement('div');
+      card.className = 'upgradeCard';
+      const info = document.createElement('div');
+      info.className = 'upgradeInfo';
+      const cost = upgradeCost(key);
+      info.innerHTML = '<div class="name">' + u.name + '</div><div class="lvl">লেভেল ' + toBn(u.level) + ' / ' + toBn(u.max) + '</div>';
+      const dots = document.createElement('div');
+      dots.className = 'upgradeDots';
+      for (let i = 1; i <= u.max; i++) {
+        const d = document.createElement('div');
+        d.className = 'udot' + (i <= u.level ? ' on' : '');
+        dots.appendChild(d);
+      }
+      info.appendChild(dots);
+      const btn = document.createElement('button');
+      btn.className = 'buyBtn';
+      btn.textContent = cost === null ? 'ম্যাক্স' : ('৳' + toBn(cost) + ' — আপগ্রেড');
+      btn.disabled = cost === null || money < cost;
+      btn.addEventListener('click', () => {
+        const c = upgradeCost(key);
+        if (c !== null && money >= c) { money -= c; u.level++; renderShop(); }
+      });
+      card.appendChild(info);
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+  }
+
+  // ===== স্ক্রিন ট্রানজিশন =====
+  document.getElementById('startBtn').addEventListener('click', function() {
+    // ফুলস্ক্রিন
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(() => {});
+    }
+
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('overScreen').classList.add('hidden');
+    document.getElementById('shopScreen').classList.add('hidden');
+    resetGame();
+    state = 'playing';
+    lastTime = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  });
+
+  document.getElementById('retryBtn').addEventListener('click', function() {
+    document.getElementById('overScreen').classList.add('hidden');
+    resetGame();
+    state = 'playing';
+    lastTime = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  });
+
+  document.getElementById('shopBtnStart').addEventListener('click', function() {
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('shopScreen').classList.remove('hidden');
+    renderShop();
+  });
+
+  document.getElementById('shopBtnOver').addEventListener('click', function() {
+    document.getElementById('overScreen').classList.add('hidden');
+    document.getElementById('shopScreen').classList.remove('hidden');
+    renderShop();
+  });
+
+  document.getElementById('closeShopBtn').addEventListener('click', function() {
+    document.getElementById('shopScreen').classList.add('hidden');
+    if (state === 'over') {
+      document.getElementById('overScreen').classList.remove('hidden');
+    } else if (state === 'playing') {
+      // কিছু করবেন না
+    } else {
+      document.getElementById('startScreen').classList.remove('hidden');
+    }
+  });
+
+  // ===== রিসাইজ =====
+  function resize() {
+    const rect = stage.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+  // ===== লুপ =====
+  function loop(now) {
+    try {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      if (state === 'playing') update(dt);
+      render();
+      rafId = requestAnimationFrame(loop);
+    } catch (e) {
+      console.error('Loop error:', e);
+      rafId = requestAnimationFrame(loop);
+    }
+  }
+
+  function update(dt) {
+    // স্পীড
+    if (braking) {
+      speed = Math.max(0, speed - currentBrakeRate() * dt);
+      targetSpeed = speed;
+      gear = speed <= 0.05 ? 0 : Math.max(1, currentGears().filter(g => g <= speed + 0.01).length);
+    } else if (speed < targetSpeed) {
+      speed = Math.min(targetSpeed, speed + (currentGears()[0] * 1.2) * dt);
+    } else if (speed > targetSpeed) {
+      speed = Math.max(targetSpeed, speed - (currentGears()[0] * 1.2) * dt);
+    }
+
+    const dz = speed * dt;
+    distKm += dz / 1000 * 22;
+    distanceAccum += dz;
+
+    // ***** স্মুথ লেন চেঞ্জ + স্টেয়ারিং *****
+    const targetX = laneX[busLane];
+    const lerpSpeed = 4 + (UPG.brake.level - 1) * 2;
+    busX += (targetX - busX) * Math.min(1, dt * lerpSpeed);
+    bus.position.x = busX;
+    // স্টেয়ারিং ইফেক্ট (Z অক্ষে ঘুরবে)
+    bus.rotation.z = (targetX - busX) * 0.08;
+
+    scrollDashes(dz);
+    scrollBuildings(dz);
+
+    const diff = 1 + Math.min(2, distKm / 6);
+
+    // ***** স্পন রেট কম (গাড়ি কম) *****
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnObstacle();
+      spawnTimer = Math.max(0.8, 2.8 / diff);
+    }
+    stopTimer -= dt;
+    if (stopTimer <= 0) {
+      spawnStop();
+      stopTimer = 3.6 / Math.sqrt(diff);
+    }
+    pedTimer -= dt;
+    if (pedTimer <= 0) {
+      spawnPedestrian();
+      pedTimer = 2.4 / Math.sqrt(diff);
+    }
+    if (missionCooldown < 999 && missionCooldown > 0) missionCooldown -= dt;
+
+    // অবজেক্ট মুভ
+    for (const o of obstacles) o.mesh.position.z += dz;
+    obstacles = obstacles.filter(o => {
+      if (o.mesh.position.z > 10) { scene.remove(o.mesh); return false; }
+      return true;
+    });
+    for (const s of stops) s.mesh.position.z += dz;
+    stops = stops.filter(s => {
+      if (s.mesh.position.z > 10) {
+        if (s.emergency && !s.hit) { missionCooldown = 8; toast('যাত্রী মিস হয়েছে'); }
+        scene.remove(s.mesh);
+        return false;
+      }
+      return true;
+    });
+    for (const p of pedestrians) p.mesh.position.z += dz;
+    pedestrians = pedestrians.filter(p => {
+      if (p.mesh.position.z > 10) { scene.remove(p.mesh); return false; }
+      return true;
+    });
+
+    // মিশন
+    if (mission) {
+      mission.timeLeft -= dt;
+      mission.hospitalObj.position.z += dz;
+      if (mission.timeLeft <= 0) {
+        toast('⏱️ দেরি হয়ে গেছে! মিশন ব্যর্থ');
+        scene.remove(mission.hospitalObj);
+        mission = null;
+        missionCooldown = 8;
+      } else if (mission.hospitalObj.position.z > -4 && mission.hospitalObj.position.z < 8) {
+        const bonus = 120 + Math.floor(Math.random() * 60);
+        fare += bonus;
+        money += bonus;
+        toast('✅ হাসপাতালে পৌঁছেছেন! +৳' + toBn(bonus) + ' বোনাস');
+        scene.remove(mission.hospitalObj);
+        mission = null;
+        missionCooldown = 8;
+      } else if (mission.hospitalObj.position.z > 10) {
+        toast('হাসপাতাল মিস হয়ে গেছে!');
+        scene.remove(mission.hospitalObj);
+        mission = null;
+        missionCooldown = 8;
+      }
+    }
+
+    if (invincible > 0) invincible -= dt;
+
+    // ***** সংঘর্ষের দূরত্ব ৩.০ (ধাক্কা কম) *****
+    for (const o of obstacles) {
+      if (o.hit) continue;
+      if (o.lane === busLane && Math.abs(o.mesh.position.z - bus.position.z) < 3.0) {
+        o.hit = true;
+        if (invincible <= 0) {
+          lives--;
+          invincible = 1.5;
+          toast('💥 ধাক্কা!');
+          if (lives <= 0) { updateHUD(); endGame(); return; }
         }
+      }
+    }
 
-        // Track clicked links
-        let clickedLinks = new Set();
-        const totalLinks = 3;
-        const socialLinks = document.querySelectorAll('.social-link');
-        const claimButton = document.getElementById('claimButton');
-        const progressFill = document.getElementById('progressFill');
-        const loading = document.getElementById('loading');
-        const message = document.getElementById('message');
-        const overlay = document.getElementById('overlay');
-        const overlayIcon = document.getElementById('overlayIcon');
-        const overlayTitle = document.getElementById('overlayTitle');
-        const overlayMessage = document.getElementById('overlayMessage');
-        const overlayButton = document.getElementById('overlayButton');
-
-        // Show full-screen overlay
-        function showOverlay(type, icon, title, messageText) {
-            overlayIcon.textContent = icon;
-            overlayTitle.textContent = title;
-            overlayMessage.textContent = messageText;
-            overlay.className = 'overlay show ' + type;
+    // স্টপে যাত্রী তোলা
+    for (const s of stops) {
+      if (s.hit) continue;
+      if (s.lane === busLane && Math.abs(s.mesh.position.z - bus.position.z) < 2.4) {
+        s.hit = true;
+        if (speed <= currentGears()[1] + 0.5) {
+          if (s.emergency) {
+            startMission(s.lane);
+            pax += 1;
+          } else {
+            const base = 15 + Math.floor(Math.random() * 10);
+            const extra = Math.floor(Math.random() * (1 + currentSeatCapacityBonus()));
+            const n = 1 + extra;
+            fare += base * n;
+            money += base * n;
+            pax += n;
+            toast('+৳' + toBn(base * n) + ' (' + toBn(n) + ' যাত্রী)');
+          }
+        } else {
+          toast('মিস! আস্তে চালান');
+          if (s.emergency) missionCooldown = 8;
         }
+      }
+    }
 
-        // Close overlay
-        overlayButton.addEventListener('click', function() {
-            overlay.classList.remove('show');
-        });
-
-        // Close overlay on background click
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-                overlay.classList.remove('show');
-            }
-        });
-
-        // Load clicked state from localStorage
-        function loadClickedState() {
-            const saved = localStorage.getItem('clickedLinks');
-            if (saved) {
-                clickedLinks = new Set(JSON.parse(saved));
-                clickedLinks.forEach(platform => {
-                    const link = document.querySelector(`[data-platform="${platform}"]`);
-                    if (link) {
-                        link.classList.add('clicked');
-                    }
-                });
-                updateProgress();
-            }
+    // রাস্তার পাশের যাত্রী
+    for (const p of pedestrians) {
+      if (p.hit) continue;
+      if (p.lane === busLane && Math.abs(p.mesh.position.z - bus.position.z) < 2.2) {
+        p.hit = true;
+        if (speed <= currentGears()[1] + 0.5) {
+          const base = 10 + Math.floor(Math.random() * 8);
+          fare += base;
+          money += base;
+          pax += 1;
+          toast('+৳' + toBn(base) + ' রাস্তার যাত্রী');
         }
+      }
+    }
 
-        // Save clicked state to localStorage
-        function saveClickedState() {
-            localStorage.setItem('clickedLinks', JSON.stringify([...clickedLinks]));
-        }
+    // ক্যামেরা স্মুথ
+    const camTargetX = busX * 0.5;
+    camera.position.x += (camTargetX - camera.position.x) * Math.min(1, dt * 3.5);
+    camera.position.y = 4.4;
+    camera.position.z = bus.position.z + 7.5;
+    camera.lookAt(busX * 0.3, 1.3, bus.position.z - 8);
 
-        // Update progress bar
-        function updateProgress() {
-            const progress = (clickedLinks.size / totalLinks) * 100;
-            progressFill.style.width = progress + '%';
+    updateHUD();
+  }
 
-            if (clickedLinks.size === totalLinks) {
-                claimButton.disabled = false;
-                claimButton.classList.add('active');
-                claimButton.textContent = '🎁 Claim করুন';
-            } else {
-                claimButton.textContent = `🔒 আরও ${totalLinks - clickedLinks.size}টি লিংকে ক্লিক করুন`;
-            }
-        }
+  function render() {
+    renderer.render(scene, camera);
+  }
 
-        // Handle social link clicks
-        socialLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                const platform = this.getAttribute('data-platform');
-                
-                if (!clickedLinks.has(platform)) {
-                    clickedLinks.add(platform);
-                    this.classList.add('clicked');
-                    saveClickedState();
-                    updateProgress();
-                }
-            });
-        });
+  // ===== ইনিশিয়ালাইজ =====
+  resize();
+  camera.position.set(0, 4.4, 7.5);
+  camera.lookAt(0, 1.3, -8);
+  render();
 
-        // Show message
-        function showMessage(text, type) {
-            message.textContent = text;
-            message.className = 'message ' + type;
-            message.style.display = 'block';
-        }
-
-        // Hide message
-        function hideMessage() {
-            message.style.display = 'none';
-        }
-
-        // Show loading
-        function showLoading() {
-            loading.style.display = 'block';
-            claimButton.disabled = true;
-        }
-
-        // Hide loading
-        function hideLoading() {
-            loading.style.display = 'none';
-            if (clickedLinks.size === totalLinks) {
-                claimButton.disabled = false;
-            }
-        }
-
-        // Handle claim button click
-        claimButton.addEventListener('click', async function() {
-            // Check if all links are clicked
-            if (clickedLinks.size !== totalLinks) {
-                showMessage('⚠️ দয়া করে ৩টি লিংকে ক্লিক করুন!', 'warning');
-                return;
-            }
-
-            hideMessage();
-            showLoading();
-
-            try {
-                const userId = getUserId();
-                const userDocRef = doc(db, 'mauali', userId);
-
-                // Check if user already claimed
-                const docSnap = await getDoc(userDocRef);
-
-                if (docSnap.exists()) {
-                    hideLoading();
-                    showOverlay(
-                        'already-claimed',
-                        '⚠️',
-                        'আগেই Claim করা হয়েছে!',
-                        'আপনি ইতিমধ্যে এই রিওয়ার্ড claim করেছেন। একই ব্রাউজার থেকে দুইবার claim করা যাবে না।'
-                    );
-                } else {
-                    // Save claim to Firestore
-                    await setDoc(userDocRef, {
-                        userId: userId,
-                        claimedAt: new Date().toISOString(),
-                        timestamp: Date.now(),
-                        platforms: [...clickedLinks]
-                    });
-
-                    hideLoading();
-                    showOverlay(
-                        'success',
-                        '🎉',
-                        'সফলভাবে Claim করা হয়েছে!',
-                        'অভিনন্দন! আপনার রিওয়ার্ড সফলভাবে claim করা হয়েছে। আমাদের সাথে থাকার জন্য ধন্যবাদ!'
-                    );
-                    
-                    // Disable button permanently
-                    claimButton.disabled = true;
-                    claimButton.classList.remove('active');
-                    claimButton.textContent = '✓ Claimed';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                hideLoading();
-                showMessage('❌ একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।', 'error');
-            }
-        });
-
-        // Check claim status on page load
-        async function checkClaimStatus() {
-            try {
-                const userId = getUserId();
-                const userDocRef = doc(db, 'mauali', userId);
-                const docSnap = await getDoc(userDocRef);
-
-                if (docSnap.exists()) {
-                    claimButton.disabled = true;
-                    claimButton.classList.remove('active');
-                    claimButton.textContent = '✓ Already Claimed';
-                    
-                    // Show overlay after a short delay
-                    setTimeout(() => {
-                        showOverlay(
-                            'already-claimed',
-                            '⚠️',
-                            'আগেই Claim করা হয়েছে!',
-                            'আপনি ইতিমধ্যে এই রিওয়ার্ড claim করেছেন।  দুইবার claim করা যাবে না।'
-                        );
-                    }, 500);
-                }
-            } catch (error) {
-                console.error('Error checking status:', error);
-            }
-        }
-
-        // Initialize
-        loadClickedState();
-        checkClaimStatus();
-    </script>
+})();
+</script>
 </body>
 </html>
