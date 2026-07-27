@@ -16,36 +16,51 @@
     width: 100vw; height: 100vh; background: #1B2430;
   }
 
-  /* বাম ও ডান প্যানেল */
-  #leftPad, #rightPad {
+  /* বাম প্যানেল (শুধু ব্রেক) */
+  #leftPad {
     width: 80px; flex-shrink: 0;
     display: flex; flex-direction: column;
-    justify-content: space-between; align-items: center;
+    justify-content: flex-end; align-items: center;
     padding: 8px 4px; background: #242C3A; z-index: 5; gap: 6px;
   }
   .padLabel { font-size: 8px; color: #9AA3B2; text-align: center; line-height: 1.2; }
+
+  /* ডান প্যানেল (শুধু গ্যাস) */
+  #rightPad {
+    width: 80px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    justify-content: flex-end; align-items: center;
+    padding: 8px 4px; background: #242C3A; z-index: 5; gap: 6px;
+  }
+
   button.ctl {
-    width: 52px; height: 52px; border-radius: 50%; border: none;
-    background: #333B4A; color: #f1f1f1; font-size: 20px; font-weight: 700;
+    width: 72px; height: 72px; border-radius: 50%; border: none;
+    background: #333B4A; color: #f1f1f1; font-size: 28px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 3px 0 #1a1f28;
+    box-shadow: 0 4px 0 #1a1f28;
     touch-action: manipulation; cursor: pointer;
   }
-  button.ctl:active { transform: translateY(2px); box-shadow: 0 1px 0 #1a1f28; }
+  button.ctl:active { transform: translateY(3px); box-shadow: 0 1px 0 #1a1f28; }
   button.ctl.accent { background: #FFC93C; color: #1B2430; }
   button.ctl.brake { background: #E63946; color: #fff; }
-  button.ctl.full { background: #444; font-size: 18px; }
 
   /* সেন্টার কলাম */
   #centerCol { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #1B2430; }
 
-  /* হেডার সাইন */
+  /* সাইনবোর্ড + ফুলস্ক্রিন বাটন */
   #sign {
     background: #0A0A0A; padding: 3px 8px; display: flex; align-items: center;
-    gap: 6px; border-bottom: 2px solid #FFC93C; flex-shrink: 0; height: 32px;
+    gap: 8px; border-bottom: 2px solid #FFC93C; flex-shrink: 0; height: 36px;
   }
   #routeNum { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 15px; color: #FFB000; background: #111; padding: 0 8px; border-radius: 4px; text-shadow: 0 0 6px rgba(255,176,0,0.7); flex-shrink: 0; }
   #missionBar { font-family: 'Oswald', sans-serif; font-size: 11px; color: #FFB000; text-shadow: 0 0 5px rgba(255,176,0,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  #fullscreenBtn {
+    background: #444; border: none; color: #fff; font-size: 20px;
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; touch-action: manipulation;
+    flex-shrink: 0;
+  }
 
   /* স্ট্যাটাস বার */
   #stats {
@@ -66,6 +81,12 @@
   /* স্টেজ */
   #stage { position: relative; flex: 1; min-height: 0; background: #1B2430; }
   #stage canvas { display: block; width: 100% !important; height: 100% !important; }
+
+  /* ডান পাশের টাচ এরিয়া (লেন কন্ট্রোল) – ওভারলে না, শুধু ইভেন্ট */
+  #touchArea {
+    position: absolute; top: 0; right: 0; width: 40%; height: 100%;
+    z-index: 5; pointer-events: auto;
+  }
 
   /* ওভারলে */
   .overlay {
@@ -126,8 +147,8 @@
 
   /* রেসপন্সিভ */
   @media (max-width: 600px) {
-    #leftPad, #rightPad { width: 60px; padding: 6px 2px; }
-    button.ctl { width: 44px; height: 44px; font-size: 16px; }
+    #leftPad, #rightPad { width: 60px; }
+    button.ctl { width: 60px; height: 60px; font-size: 24px; }
     .padLabel { font-size: 7px; }
     .title-main { font-size: 18px; }
     .big-btn { font-size: 12px; padding: 7px 16px; }
@@ -136,11 +157,11 @@
   }
   @media (orientation: portrait) {
     #leftPad, #rightPad { width: 55px; }
-    button.ctl { width: 40px; height: 40px; font-size: 14px; }
+    button.ctl { width: 52px; height: 52px; font-size: 20px; }
   }
   @media (orientation: landscape) and (max-height: 500px) {
     #leftPad, #rightPad { width: 65px; }
-    button.ctl { width: 46px; height: 46px; font-size: 18px; }
+    button.ctl { width: 64px; height: 64px; font-size: 26px; }
   }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
@@ -150,17 +171,22 @@
 
 <div id="app">
 
+  <!-- বাম প্যানেল (শুধু ব্রেক) -->
   <div id="leftPad">
-    <div class="padLabel">লেন / ব্রেক</div>
-    <button class="ctl" id="laneLeftBtn">◀</button>
+    <div class="padLabel">ব্রেক</div>
     <button class="ctl brake" id="brakeBtn">🛑</button>
   </div>
 
+  <!-- সেন্টার কলাম -->
   <div id="centerCol">
+    <!-- সাইনবোর্ড + ফুলস্ক্রিন -->
     <div id="sign">
       <div id="routeNum">৭০৪</div>
       <div id="missionBar">যাত্রী তুলুন ও ভাড়া আয় করুন</div>
+      <button id="fullscreenBtn">⛶</button>
     </div>
+
+    <!-- স্ট্যাটাস -->
     <div id="stats">
       <div class="stat"><div class="v" id="fareVal">৳ ০</div><div class="l">টাকা</div></div>
       <div class="stat"><div class="v" id="paxVal">০</div><div class="l">যাত্রী</div></div>
@@ -168,13 +194,19 @@
       <div class="stat"><div id="gearDots"></div><div class="l">গিয়ার</div></div>
       <div class="stat"><div id="lives"></div><div class="l">লাইফ</div></div>
     </div>
+
+    <!-- 3D স্টেজ -->
     <div id="stage">
       <canvas id="game"></canvas>
       <div id="toast"></div>
 
+      <!-- ডান পাশের টাচ এরিয়া (লেন কন্ট্রোল) -->
+      <div id="touchArea"></div>
+
+      <!-- ওভারলে স্ক্রিন -->
       <div class="overlay" id="startScreen">
         <div class="title-main">ঢাকা বাস সিমুলেটর ৩ডি</div>
-        <div class="subtitle">বাম পাশে লেন-বামে ও ব্রেক (চেপে ধরুন)। ডান পাশে লেন-ডানে ও গ্যাস (ট্যাপ করুন, প্রতি ট্যাপে এক গিয়ার বাড়বে, মোট ৫ গিয়ার)। বাস স্টপ ও রাস্তার পাশে যাত্রী তুলুন। মাঝে মাঝে ইমার্জেন্সি যাত্রী আসবে — সময়মতো হাসপাতালে পৌঁছান বোনাসের জন্য!</div>
+        <div class="subtitle">বাম পাশে ব্রেক (চেপে ধরে রাখুন)। ডান পাশে গ্যাস (ট্যাপ করলে গিয়ার বাড়ে, সর্বোচ্চ ৫)। স্ক্রিনের ডান দিকের ১/৩ অংশে ট্যাপ করলে বাস বাম লেনে, ২/৩ অংশে ট্যাপ করলে ডান লেনে যাবে। আপনার টাকা ও আপগ্রেড অটো-সেভ হবে!</div>
         <div class="btnRow">
           <button class="big-btn" id="startBtn">চালানো শুরু করুন</button>
           <button class="ghost-btn" id="shopBtnStart">🛠️ গ্যারেজ</button>
@@ -204,11 +236,10 @@
     </div>
   </div>
 
+  <!-- ডান প্যানেল (শুধু গ্যাস) -->
   <div id="rightPad">
-    <div class="padLabel">লেন / গ্যাস</div>
-    <button class="ctl" id="laneRightBtn">▶</button>
+    <div class="padLabel">গ্যাস</div>
     <button class="ctl accent" id="gasBtn">🚀</button>
-    <button class="ctl full" id="fullscreenBtn">⛶</button>
   </div>
 
 </div>
@@ -227,28 +258,112 @@
     return;
   }
 
-  // ===== ফুলস্ক্রিন ও অরিয়েন্টেশন লক =====
-  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  // ===== সেভ/লোড সিস্টেম (localStorage) =====
+  const SAVE_KEY = 'busSimulatorSave';
 
+  // ===== গেম স্টেট (ডিফল্ট) =====
+  let money = 200;
+  const UPG = {
+    engine: { name: '⚙️ ইঞ্জিন/স্পিড', level: 1, max: 4, cost: [0, 150, 350, 700] },
+    seats:  { name: '💺 সিট সংখ্যা', level: 1, max: 4, cost: [0, 120, 300, 600] },
+    brake:  { name: '🛞 ব্রেক/হ্যান্ডলিং', level: 1, max: 4, cost: [0, 130, 320, 650] }
+  };
+
+  // ===== সেভ ফাংশন =====
+  function saveGame() {
+    try {
+      const data = {
+        money: money,
+        engineLevel: UPG.engine.level,
+        seatsLevel: UPG.seats.level,
+        brakeLevel: UPG.brake.level
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('Save failed:', e);
+    }
+  }
+
+  // ===== লোড ফাংশন =====
+  function loadGame() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        money = data.money || 200;
+        UPG.engine.level = data.engineLevel || 1;
+        UPG.seats.level = data.seatsLevel || 1;
+        UPG.brake.level = data.brakeLevel || 1;
+        // ম্যাক্স লেভেলের বেশি না হয়
+        UPG.engine.level = Math.min(UPG.engine.level, UPG.engine.max);
+        UPG.seats.level = Math.min(UPG.seats.level, UPG.seats.max);
+        UPG.brake.level = Math.min(UPG.brake.level, UPG.brake.max);
+        return true;
+      }
+    } catch (e) {
+      console.warn('Load failed:', e);
+    }
+    return false;
+  }
+
+  // ===== গেম লোড করো =====
+  loadGame();
+
+  function upgradeCost(key) {
+    const u = UPG[key];
+    return u.level >= u.max ? null : u.cost[u.level];
+  }
+
+  const BASE_GEARS = [4, 8, 12.5, 17.5, 23];
+  function currentGears() {
+    const mult = 1 + (UPG.engine.level - 1) * 0.16;
+    return BASE_GEARS.map(g => g * mult);
+  }
+  function currentBrakeRate() { return 9 + (UPG.brake.level - 1) * 4; }
+  function currentLaneLerp() { return 4 + (UPG.brake.level - 1) * 2; }
+  function currentSeatCapacityBonus() { return UPG.seats.level - 1; }
+
+  // ===== ফুলস্ক্রিন =====
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.warn('Fullscreen request denied:', err);
-      });
+      document.documentElement.requestFullscreen().catch(() => {});
     } else {
       document.exitFullscreen().catch(() => {});
     }
   }
-
   fullscreenBtn.addEventListener('click', toggleFullscreen);
-
   document.addEventListener('fullscreenchange', () => {
     fullscreenBtn.textContent = document.fullscreenElement ? '⛶' : '⛶';
     setTimeout(resize, 100);
   });
 
-  window.addEventListener('load', () => {
-    setTimeout(() => window.scrollTo(0, 0), 200);
+  // ===== ডান পাশের টাচ এরিয়া (লেন কন্ট্রোল) =====
+  const touchArea = document.getElementById('touchArea');
+  touchArea.style.pointerEvents = 'auto';
+
+  touchArea.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    const rect = touchArea.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const width = rect.width;
+    if (x < width / 3) {
+      laneMove(-1);
+    } else {
+      laneMove(1);
+    }
+  }, { passive: false });
+
+  touchArea.addEventListener('mousedown', (e) => {
+    const rect = touchArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = rect.width;
+    if (x < width / 3) {
+      laneMove(-1);
+    } else {
+      laneMove(1);
+    }
   });
 
   // ===== PWA =====
@@ -268,27 +383,6 @@
     installBtn.classList.remove('show');
   });
   window.addEventListener('appinstalled', () => installBtn.classList.remove('show'));
-
-  // ===== গেম স্টেট =====
-  let money = 200;
-  const UPG = {
-    engine: { name: '⚙️ ইঞ্জিন/স্পিড', level: 1, max: 4, cost: [0, 150, 350, 700] },
-    seats:  { name: '💺 সিট সংখ্যা', level: 1, max: 4, cost: [0, 120, 300, 600] },
-    brake:  { name: '🛞 ব্রেক/হ্যান্ডলিং', level: 1, max: 4, cost: [0, 130, 320, 650] }
-  };
-  function upgradeCost(key) {
-    const u = UPG[key];
-    return u.level >= u.max ? null : u.cost[u.level];
-  }
-
-  const BASE_GEARS = [4, 8, 12.5, 17.5, 23];
-  function currentGears() {
-    const mult = 1 + (UPG.engine.level - 1) * 0.16;
-    return BASE_GEARS.map(g => g * mult);
-  }
-  function currentBrakeRate() { return 9 + (UPG.brake.level - 1) * 4; }
-  function currentLaneLerp() { return 4 + (UPG.brake.level - 1) * 2; } // স্মুথের জন্য কম
-  function currentSeatCapacityBonus() { return UPG.seats.level - 1; }
 
   // ===== THREE.JS সেটআপ =====
   const canvas = document.getElementById('game');
@@ -434,7 +528,7 @@
     return g;
   }
 
-  // ---- মানুষ ----
+  // ---- মানুষ (লাইন বিভাজকের দাগে) ----
   function makePerson(emergency) {
     const g = new THREE.Group();
     const col = emergency ? 0xE63946 : [0x2EC4B6, 0xF4A261, 0x9d4edd, 0x457B9D][Math.floor(Math.random() * 4)];
@@ -482,7 +576,7 @@
     return g;
   }
 
-  // ===== গেম স্টেট =====
+  // ===== গেম স্টেট (রান-টাইম) =====
   let state = 'start';
   let gear = 0, speed = 0, targetSpeed = 0, braking = false;
   let fare = 0, pax = 0, distKm = 0, lives = 3;
@@ -572,7 +666,9 @@
     const group = new THREE.Group();
     group.add(makeStopSign());
     const person = makePerson(emergency);
-    person.position.x = 0.35;
+    // লাইন বিভাজকের দাগে
+    const dividerX = laneX[lane] + (lane < LANES-1 ? LANE_W/2 : -LANE_W/2);
+    person.position.x = dividerX - laneX[lane];
     group.add(person);
     group.position.set(laneX[lane], 0, -100);
     scene.add(group);
@@ -583,7 +679,8 @@
   function spawnPedestrian() {
     const side = Math.random() < 0.5 ? 0 : LANES - 1;
     const g = makePerson(false);
-    const xOff = side === 0 ? -0.9 : 0.9;
+    const dividerX = laneX[side] + (side < LANES-1 ? LANE_W/2 : -LANE_W/2);
+    const xOff = dividerX - laneX[side];
     g.position.set(laneX[side] + xOff, 0, -95);
     scene.add(g);
     pedestrians.push({ mesh: g, lane: side, hit: false });
@@ -611,8 +708,10 @@
   }
 
   document.getElementById('gasBtn').addEventListener('click', gasTap);
-  document.getElementById('laneLeftBtn').addEventListener('click', () => laneMove(-1));
-  document.getElementById('laneRightBtn').addEventListener('click', () => laneMove(1));
+  document.getElementById('gasBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    gasTap();
+  }, { passive: false });
 
   const brakeBtn = document.getElementById('brakeBtn');
   brakeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); brakeStart(); }, { passive: false });
@@ -656,7 +755,12 @@
       btn.disabled = cost === null || money < cost;
       btn.addEventListener('click', () => {
         const c = upgradeCost(key);
-        if (c !== null && money >= c) { money -= c; u.level++; renderShop(); }
+        if (c !== null && money >= c) {
+          money -= c;
+          u.level++;
+          renderShop();
+          saveGame(); // <= সেভ
+        }
       });
       card.appendChild(info);
       card.appendChild(btn);
@@ -666,7 +770,6 @@
 
   // ===== স্ক্রিন ট্রানজিশন =====
   document.getElementById('startBtn').addEventListener('click', function() {
-    // ফুলস্ক্রিন
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
@@ -743,7 +846,6 @@
   }
 
   function update(dt) {
-    // স্পীড
     if (braking) {
       speed = Math.max(0, speed - currentBrakeRate() * dt);
       targetSpeed = speed;
@@ -758,12 +860,10 @@
     distKm += dz / 1000 * 22;
     distanceAccum += dz;
 
-    // ***** স্মুথ লেন চেঞ্জ + স্টেয়ারিং *****
     const targetX = laneX[busLane];
     const lerpSpeed = 4 + (UPG.brake.level - 1) * 2;
     busX += (targetX - busX) * Math.min(1, dt * lerpSpeed);
     bus.position.x = busX;
-    // স্টেয়ারিং ইফেক্ট (Z অক্ষে ঘুরবে)
     bus.rotation.z = (targetX - busX) * 0.08;
 
     scrollDashes(dz);
@@ -771,7 +871,6 @@
 
     const diff = 1 + Math.min(2, distKm / 6);
 
-    // ***** স্পন রেট কম (গাড়ি কম) *****
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
       spawnObstacle();
@@ -789,7 +888,6 @@
     }
     if (missionCooldown < 999 && missionCooldown > 0) missionCooldown -= dt;
 
-    // অবজেক্ট মুভ
     for (const o of obstacles) o.mesh.position.z += dz;
     obstacles = obstacles.filter(o => {
       if (o.mesh.position.z > 10) { scene.remove(o.mesh); return false; }
@@ -810,7 +908,6 @@
       return true;
     });
 
-    // মিশন
     if (mission) {
       mission.timeLeft -= dt;
       mission.hospitalObj.position.z += dz;
@@ -823,6 +920,7 @@
         const bonus = 120 + Math.floor(Math.random() * 60);
         fare += bonus;
         money += bonus;
+        saveGame(); // <= সেভ (টাকা আয়)
         toast('✅ হাসপাতালে পৌঁছেছেন! +৳' + toBn(bonus) + ' বোনাস');
         scene.remove(mission.hospitalObj);
         mission = null;
@@ -837,7 +935,6 @@
 
     if (invincible > 0) invincible -= dt;
 
-    // ***** সংঘর্ষের দূরত্ব ৩.০ (ধাক্কা কম) *****
     for (const o of obstacles) {
       if (o.hit) continue;
       if (o.lane === busLane && Math.abs(o.mesh.position.z - bus.position.z) < 3.0) {
@@ -851,7 +948,6 @@
       }
     }
 
-    // স্টপে যাত্রী তোলা
     for (const s of stops) {
       if (s.hit) continue;
       if (s.lane === busLane && Math.abs(s.mesh.position.z - bus.position.z) < 2.4) {
@@ -864,10 +960,12 @@
             const base = 15 + Math.floor(Math.random() * 10);
             const extra = Math.floor(Math.random() * (1 + currentSeatCapacityBonus()));
             const n = 1 + extra;
-            fare += base * n;
-            money += base * n;
+            const earn = base * n;
+            fare += earn;
+            money += earn;
+            saveGame(); // <= সেভ (টাকা আয়)
             pax += n;
-            toast('+৳' + toBn(base * n) + ' (' + toBn(n) + ' যাত্রী)');
+            toast('+৳' + toBn(earn) + ' (' + toBn(n) + ' যাত্রী)');
           }
         } else {
           toast('মিস! আস্তে চালান');
@@ -876,22 +974,21 @@
       }
     }
 
-    // রাস্তার পাশের যাত্রী
     for (const p of pedestrians) {
       if (p.hit) continue;
       if (p.lane === busLane && Math.abs(p.mesh.position.z - bus.position.z) < 2.2) {
         p.hit = true;
         if (speed <= currentGears()[1] + 0.5) {
-          const base = 10 + Math.floor(Math.random() * 8);
-          fare += base;
-          money += base;
+          const earn = 10 + Math.floor(Math.random() * 8);
+          fare += earn;
+          money += earn;
+          saveGame(); // <= সেভ (টাকা আয়)
           pax += 1;
-          toast('+৳' + toBn(base) + ' রাস্তার যাত্রী');
+          toast('+৳' + toBn(earn) + ' রাস্তার যাত্রী');
         }
       }
     }
 
-    // ক্যামেরা স্মুথ
     const camTargetX = busX * 0.5;
     camera.position.x += (camTargetX - camera.position.x) * Math.min(1, dt * 3.5);
     camera.position.y = 4.4;
